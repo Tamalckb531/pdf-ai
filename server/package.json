@@ -1,0 +1,20 @@
+{
+  "name": "pdf-ai",
+  "version": "1.0.0",
+  "description": "an ai agent to read through pdf files",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.1"
+  }
+}
