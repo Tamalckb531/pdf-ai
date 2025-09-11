@@ -16,12 +16,6 @@ const worker = new Worker(
         const loader = new PDFLoader(data.path);
         const docs = await loader.load();
 
-        const textSplitter = new CharacterTextSplitter({
-            chunkSize: 300,
-            chunkOverlap: 0,
-        });
-        const texts = await textSplitter.splitText(docs);
-        console.log(texts);
 
     },
     {
