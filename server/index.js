@@ -2,7 +2,15 @@ import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
 import { Queue } from 'bullmq'
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
+import { QdrantVectorStore } from '@langchain/qdrant';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+
+
+const genAI = new GoogleGenerativeAI("AIzaSyBTQAW2u5ZSxFDEhfQo-b9me3GpO1osanQ");
+
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 const queue = new Queue("file-upload-queue", {
     connection: {
@@ -31,6 +39,47 @@ app.use(cors());
 app.get('/', (req, res) => {
     return res.json({ status: "All Good" });
 });
+
+app.get('/chat', async (req, res) => {
+    const userQuery = 'What is the core skill of this applicant ?';
+
+    const embeddings = new GoogleGenerativeAIEmbeddings({
+        apiKey: "AIzaSyBTQAW2u5ZSxFDEhfQo-b9me3GpO1osanQ",
+        model: "gemini-embedding-001",
+    });
+
+    const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
+        url: 'http://localhost:6333',
+        collectionName: 'pdf-docs'
+    });
+
+    const ret = vectorStore.asRetriever({
+        k: 2,
+    });
+
+    const result = await ret.invoke(userQuery);
+
+    const SYSTEM_PROMPT = ` You are a helpful AI Assistant who answers the query base on the available context from PDF File.
+    Context : ${JSON.stringify(result)}`;
+
+    const chat = model.startChat({
+        history: [
+            {
+                role: "system",
+                parts: [{ text: SYSTEM_PROMPT }],
+            },
+            {
+                role: "user",
+                parts: [{ text: userQuery }],
+            },
+        ],
+    });
+
+    const chatRes = await chat.sendMessage();
+    const response = chatRes.response.text();
+
+    return res.json({ response });
+})
 
 app.post('/upload/pdf', upload.single('pdf'), async (req, res) => {
     await queue.add(
